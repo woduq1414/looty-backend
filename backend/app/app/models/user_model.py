@@ -39,6 +39,9 @@ class UserBase(SQLModel):
 
 
 class User(BaseUUIDModel, UserBase, table=True):
+
+    is_email_verified: bool = Field(nullable=True)
+
     hashed_password: str | None = Field(nullable=False, index=True)
     role: Optional["Role"] = Relationship(  # noqa: F821
         back_populates="users", sa_relationship_kwargs={"lazy": "joined"}

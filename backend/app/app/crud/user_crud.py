@@ -20,6 +20,9 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         db_session = db_session or super().get_db().session
         users = await db_session.execute(select(User).where(User.email == email))
         return users.scalar_one_or_none()
+    
+
+
 
     async def create_with_role(
         self, *, obj_in: IUserCreate, db_session: AsyncSession | None = None

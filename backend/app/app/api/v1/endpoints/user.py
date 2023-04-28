@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from io import BytesIO
 from typing import Annotated
 from uuid import UUID
@@ -15,6 +16,7 @@ from app.models import User, UserFollow
 from app.models.role_model import Role
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
+from app.core.send_email import send_secruity_code_mail
 from fastapi import (
     APIRouter,
     Body,
@@ -346,6 +348,37 @@ async def unfollowing_a_user_by_id(
     return create_response(data=user_follow)
 
 
+@router.get("/check-email")
+async def get_is_valid_email(
+    email : str = Depends(user_deps.is_valid_email),
+) -> IGetResponseBase[str]:
+    """
+    Check if email is registered but not active.
+    If email is registerd but not active, send secruity code to email.
+    """
+
+    if email:
+        send_secruity_code_mail(email=email)
+
+    return create_response(data=email)
+
+
+@router.post("/verify-email")
+async def verify_email(
+    email : str = Depends(user_deps.is_valid_email),
+    # secruity_code : str = Depends(),
+) -> IGetResponseBase[str]:
+    """
+    Verify email by secruity code.
+    """
+
+
+
+    return create_response(data="success")
+
+
+
+
 @router.get("/{user_id}")
 async def get_user_by_id(
     user: User = Depends(user_deps.is_valid_user),
@@ -373,6 +406,12 @@ async def get_my_data(
     return create_response(data=current_user)
 
 
+
+
+
+
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(
     new_user: IUserCreate = Depends(user_deps.user_exists),
@@ -388,6 +427,8 @@ async def create_user(
     """
     user = await crud.user.create_with_role(obj_in=new_user)
     return create_response(data=user)
+
+
 
 
 @router.delete("/{user_id}")
