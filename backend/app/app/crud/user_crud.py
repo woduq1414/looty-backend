@@ -22,6 +22,17 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         return users.scalar_one_or_none()
     
 
+    async def make_active(
+        self, *, db_obj : User, kakao_id : str,  db_session: AsyncSession | None = None
+    ) -> None:
+        db_session = db_session or super().get_db().session
+        db_obj.is_active = True
+        db_obj.login_type = "kakao"
+        db_obj.kakao_id = kakao_id
+
+        await db_session.commit()
+        await db_session.refresh(db_obj)
+
 
 
     async def create_with_role(

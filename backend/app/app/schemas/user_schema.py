@@ -67,6 +67,7 @@ class IUserBasicInfo(BaseModel):
     id: UUID
     first_name: str
     last_name: str
+    
 
 
 class IUserStatus(str, Enum):

@@ -16,6 +16,7 @@ from app.api import deps
 from app.deps import user_deps
 from app.models import User, UserFollow
 from app.models.role_model import Role
+from app.utils.kakao_login import verify_kakao_access_token
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
 from app.utils.email import send_secruity_code_mail, verify_security_code
@@ -59,7 +60,8 @@ router = APIRouter()
 async def read_users_list(
     params: Params = Depends(),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user(
+            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
     ),
 ) -> IGetResponsePaginated[IUserReadWithoutGroups]:
     """
@@ -125,7 +127,8 @@ async def read_users_list_by_role_name(
 async def get_hero_list_order_by_created_at(
     params: Params = Depends(),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user(
+            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
     ),
 ) -> IGetResponsePaginated[IUserReadWithoutGroups]:
     """
@@ -141,261 +144,68 @@ async def get_hero_list_order_by_created_at(
     return create_response(data=users)
 
 
-@router.get("/following")
-async def get_following(
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-) -> IGetResponsePaginated[IUserFollowReadCommon]:
-    """
-    Lists the people who the authenticated user follows.
-    """
-    query = (
-        select(
-            User.id,
-            User.first_name,
-            User.last_name,
-            User.follower_count,
-            User.following_count,
-            UserFollow.is_mutual,
-        )
-        .join(UserFollow, User.id == UserFollow.target_user_id)
-        .where(UserFollow.user_id == current_user.id)
-    )
-    users = await crud.user.get_multi_paginated(query=query, params=params)
-    return create_response(data=users)
 
-
-@router.get(
-    "/following/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_class=Response,
-)
-async def check_is_followed_by_user_id(
-    user: User = Depends(user_deps.is_valid_user),
-    current_user: User = Depends(deps.get_current_user()),
-):
-    """
-    Check if a person is followed by the authenticated user
-    """
-    result = await crud.user_follow.get_follow_by_user_id_and_target_user_id(
-        user_id=user.id, target_user_id=current_user.id
-    )
-    if not result:
-        raise UserNotFollowedException(user_name=user.last_name)
-
-    raise UserFollowedException(target_user_name=user.last_name)
-
-
-@router.get("/followers")
-async def get_followers(
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-) -> IGetResponsePaginated[IUserFollowReadCommon]:
-    """
-    Lists the people following the authenticated user.
-    """
-    query = (
-        select(
-            User.id,
-            User.first_name,
-            User.last_name,
-            User.follower_count,
-            User.following_count,
-            UserFollow.is_mutual,
-        )
-        .join(UserFollow, User.id == UserFollow.user_id)
-        .where(UserFollow.target_user_id == current_user.id)
-    )
-    users = await crud.user.get_multi_paginated(params=params, query=query)
-    return create_response(data=users)
-
-
-@router.get("/{user_id}/followers")
-async def get_user_followed_by_user_id(
-    user_id: UUID = Depends(user_deps.is_valid_user_id),
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-) -> IGetResponsePaginated[IUserFollowReadCommon]:
-    """
-    Lists the people following the specified user.
-    """
-    query = (
-        select(
-            User.id,
-            User.first_name,
-            User.last_name,
-            User.follower_count,
-            User.following_count,
-            UserFollow.is_mutual,
-        )
-        .join(UserFollow, User.id == UserFollow.user_id)
-        .where(UserFollow.target_user_id == user_id)
-    )
-    users = await crud.user.get_multi_paginated(params=params, query=query)
-    return create_response(data=users)
-
-
-@router.get("/{user_id}/following")
-async def get_user_following_by_user_id(
-    user_id: UUID = Depends(user_deps.is_valid_user_id),
-    params: Params = Depends(),
-    current_user: User = Depends(deps.get_current_user()),
-) -> IGetResponsePaginated[IUserFollowReadCommon]:
-    """
-    Lists the people who the specified user follows.
-    """
-    query = (
-        select(
-            User.id,
-            User.first_name,
-            User.last_name,
-            User.follower_count,
-            User.following_count,
-            UserFollow.is_mutual,
-        )
-        .join(UserFollow, User.id == UserFollow.target_user_id)
-        .where(UserFollow.user_id == user_id)
-    )
-    users = await crud.user.get_multi_paginated(query=query, params=params)
-    return create_response(data=users)
-
-
-@router.get(
-    "/{user_id}/following/{target_user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_class=Response,
-)
-async def check_a_user_is_followed_another_user_by_id(
-    user_id: UUID,
-    target_user_id: UUID,
-    current_user: User = Depends(deps.get_current_user()),
-):
-    """
-    Check if a user follows another user
-    """
-    if user_id == target_user_id:
-        raise SelfFollowedException()
-
-    user = await crud.user.get(id=user_id)
-    if not user:
-        raise IdNotFoundException(User, id=user_id)
-
-    target_user = await crud.user.get(id=target_user_id)
-    if not target_user:
-        raise IdNotFoundException(User, id=target_user_id)
-
-    result = await crud.user_follow.get_follow_by_user_id_and_target_user_id(
-        user_id=user_id, target_user_id=target_user_id
-    )
-    if not result:
-        raise UserNotFollowedException(
-            user_name=user.last_name, target_user_name=target_user.last_name
-        )
-
-
-@router.put("/following/{target_user_id}")
-async def follow_a_user_by_id(
-    target_user_id: UUID,
-    current_user: User = Depends(deps.get_current_user()),
-) -> IPutResponseBase[IUserFollowRead]:
-    """
-    Following a user
-    """
-    if target_user_id == current_user.id:
-        raise SelfFollowedException()
-    target_user = await crud.user.get(id=target_user_id)
-    if not target_user:
-        raise IdNotFoundException(User, id=target_user_id)
-
-    current_follow_user = (
-        await crud.user_follow.get_follow_by_user_id_and_target_user_id(
-            user_id=current_user.id, target_user_id=target_user_id
-        )
-    )
-    if current_follow_user:
-        raise UserFollowedException(target_user_name=target_user.last_name)
-
-    new_user_follow = await crud.user_follow.follow_a_user_by_target_user_id(
-        user=current_user, target_user=target_user
-    )
-    return create_response(data=new_user_follow)
-
-
-@router.delete("/following/{target_user_id}")
-async def unfollowing_a_user_by_id(
-    target_user_id: UUID,
-    current_user: User = Depends(deps.get_current_user()),
-) -> IDeleteResponseBase[IUserFollowRead]:
-    """
-    Unfollowing a user
-    """
-    if target_user_id == current_user.id:
-        raise SelfFollowedException()
-    target_user = await crud.user.get(id=target_user_id)
-    if not target_user:
-        raise IdNotFoundException(User, id=target_user_id)
-
-    current_follow_user = await crud.user_follow.get_follow_by_target_user_id(
-        user_id=current_user.id, target_user_id=target_user_id
-    )
-
-    if not current_follow_user:
-        raise UserNotFollowedException(user_name=target_user.last_name)
-
-    user_follow = await crud.user_follow.unfollow_a_user_by_id(
-        user_follow_id=current_follow_user.id,
-        user=current_user,
-        target_user=target_user,
-    )
-    return create_response(data=user_follow)
-
+# (카톡)로그인 프로세스 : 관리자가 미리 정보를 등록 -> 사용자가 카카오 로그인 버튼을 클릭하여 카카오 access token 받음 -> db에 있는 kakao id면 로그인, 없으면 회원가입 페이지로
+# 회원가입 프로세스 : 사용자가 email을 입력 -> db에 있는 non active User이면 인증 메일 전송 -> 인증 번호 정확히 입력하면 해당 이메일 유저의 is_active, kakao_id 값 변경 후 로그인
+  
 
 @router.get("/check-email")
 async def get_is_valid_email(
-    email : str = Depends(user_deps.is_valid_email),
-    redis_client : Redis = Depends(deps.get_redis_client),
+    email: str = Depends(user_deps.is_valid_email),
+    redis_client: Redis = Depends(deps.get_redis_client),
 ) -> IGetResponseBase[dict]:
     """
     Check if email is registered but not active.
     If email is registerd but not active, send secruity code to email.
     """
 
-    
     secruity_code = await send_secruity_code_mail(email=email, redis_client=redis_client)
 
     return create_response(data={
-        "email" : email, 
-        "secruity_code" : secruity_code # 메일 전송 구현 전까지 임시로
+        "email": email,
+        "secruity_code": secruity_code  # 메일 전송 구현 전까지 임시로
 
     })
 
 
 @router.post("/verify-email")
 async def verify_email(
-    email : str = Body(...),
-    secruity_code : str = Body(...),
-    redis_client : Redis = Depends(deps.get_redis_client),
+    email: str = Body(...),
+    secruity_code: str = Body(...),
+    kakao_access_token: str = Body(...),
+    redis_client: Redis = Depends(deps.get_redis_client),
     # secruity_code : str = Depends(),
 ) -> IGetResponseBase[str]:
     """
     Verify email by secruity code.
     """
-    
+
     if await verify_security_code(email=email, secruity_code=secruity_code, redis_client=redis_client):
+
+        current_user = await crud.user.get_by_email(
+            email=email
+        )
+
+        kakao_id = verify_kakao_access_token(kakao_access_token)
+
+        if kakao_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid kakao access token")
+
+        await crud.user.make_active(db_obj=current_user, kakao_id=kakao_id)
+
         return create_response(data="success")
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid secruity code")
-
-
-
-
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid secruity code")
 
 
 @router.get("/{user_id}")
 async def get_user_by_id(
     user: User = Depends(user_deps.is_valid_user),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user(
+            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
     ),
 ) -> IGetResponseBase[IUserRead]:
     """
@@ -418,12 +228,6 @@ async def get_my_data(
     return create_response(data=current_user)
 
 
-
-
-
-
-
-
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(
     new_user: IUserCreate = Depends(user_deps.user_exists),
@@ -439,8 +243,6 @@ async def create_user(
     """
     user = await crud.user.create_with_role(obj_in=new_user)
     return create_response(data=user)
-
-
 
 
 @router.delete("/{user_id}")

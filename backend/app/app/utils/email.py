@@ -5,6 +5,7 @@ import os
 from redis.asyncio import Redis
 
 from app.api import deps
+from app.utils.uuid6 import uuid7
 
 
 async def send_secruity_code_mail(redis_client : Redis, email: str) -> str:
@@ -35,6 +36,11 @@ def generate_security_code() -> str:
     return str(random.randint(100000, 999999))
 
 
+def generate_random_string():
+    return uuid7()
+
+
+
 async def verify_security_code(redis_client : Redis, email: str, secruity_code: str) -> bool:
 
     # TODO - 인증 횟수 제한 구현
@@ -42,9 +48,8 @@ async def verify_security_code(redis_client : Redis, email: str, secruity_code: 
     key = f"security_code:{email}"
     value = await redis_client.get(key)
 
-    print(key, value, secruity_code)
-
     if value == secruity_code:
+
         return True
     else:
         return False

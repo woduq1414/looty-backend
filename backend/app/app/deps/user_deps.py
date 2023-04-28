@@ -57,6 +57,12 @@ async def is_valid_email(
             )
         else:
 
+            # if user.is_email_verified is True:
+
+            #     raise HTTPException(
+            #         status_code = status.HTTP_406_NOT_ACCEPTABLE
+            #     )
+
             
 
             return email
