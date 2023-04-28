@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from io import BytesIO
 from typing import Annotated
 from uuid import UUID
+
+from redis.asyncio import Redis
 from app.utils.exceptions import (
     IdNotFoundException,
     SelfFollowedException,
@@ -16,7 +18,7 @@ from app.models import User, UserFollow
 from app.models.role_model import Role
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
-from app.core.send_email import send_secruity_code_mail
+from app.utils.email import send_secruity_code_mail, verify_security_code
 from fastapi import (
     APIRouter,
     Body,
@@ -351,30 +353,40 @@ async def unfollowing_a_user_by_id(
 @router.get("/check-email")
 async def get_is_valid_email(
     email : str = Depends(user_deps.is_valid_email),
-) -> IGetResponseBase[str]:
+    redis_client : Redis = Depends(deps.get_redis_client),
+) -> IGetResponseBase[dict]:
     """
     Check if email is registered but not active.
     If email is registerd but not active, send secruity code to email.
     """
 
-    if email:
-        send_secruity_code_mail(email=email)
+    
+    secruity_code = await send_secruity_code_mail(email=email, redis_client=redis_client)
 
-    return create_response(data=email)
+    return create_response(data={
+        "email" : email, 
+        "secruity_code" : secruity_code # 메일 전송 구현 전까지 임시로
+
+    })
 
 
 @router.post("/verify-email")
 async def verify_email(
-    email : str = Depends(user_deps.is_valid_email),
+    email : str = Body(...),
+    secruity_code : str = Body(...),
+    redis_client : Redis = Depends(deps.get_redis_client),
     # secruity_code : str = Depends(),
 ) -> IGetResponseBase[str]:
     """
     Verify email by secruity code.
     """
+    
+    if await verify_security_code(email=email, secruity_code=secruity_code, redis_client=redis_client):
+        return create_response(data="success")
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid secruity code")
 
 
-
-    return create_response(data="success")
 
 
 
