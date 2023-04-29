@@ -4,6 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 from redis.asyncio import Redis
+from app.api.v1.endpoints.role import update_role
 from app.utils.exceptions import (
     IdNotFoundException,
     SelfFollowedException,
@@ -39,7 +40,7 @@ from app.schemas.response_schema import (
     IPutResponseBase,
     create_response,
 )
-from app.schemas.role_schema import IRoleEnum, IRoleUpdate
+from app.schemas.role_schema import IRoleEnum, IRoleRead, IRoleUpdate
 from app.schemas.user_follow_schema import IUserFollowRead
 from app.schemas.user_schema import (
     IUserCreate,
@@ -201,11 +202,10 @@ async def verify_email(
 
 
 
-@router.put("/role/{user_id}")
+@router.put("/role/{user_id}/{role_id}")
 async def update_user_role(
     role_id: UUID,
     target_user: User = Depends(user_deps.is_valid_user),
-    current_role: Role = Depends(role_deps.get_user_role_by_id),
     current_user: User = Depends(
         deps.get_current_user(required_roles=[IRoleEnum.admin])
     ),
@@ -217,6 +217,7 @@ async def update_user_role(
     - admin
     """
     
+    updated_role = await crud.role.add_role_to_user(user = target_user, role_id = role_id)
 
     return create_response(data=updated_role)
 
