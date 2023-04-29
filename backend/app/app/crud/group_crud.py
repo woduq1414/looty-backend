@@ -63,3 +63,4 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
 
 
 group = CRUDGroup(Group)
+

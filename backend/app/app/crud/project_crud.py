@@ -1,65 +1,60 @@
-from app.models.group_model import Group
+
+from app.models.project_model import Project
+
 from app.models.user_model import User
-from app.schemas.group_schema import IGroupCreate, IGroupUpdate
+from app.schemas.project_schema import IProjectCreate, IProjectUpdate
 from app.crud.base_crud import CRUDBase
 from sqlmodel import select
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 
-class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
+class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
     
-    async def get_group_by_id(
-        self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Group:
+    async def get_project_by_id(
+        self, *, id: str, db_session: AsyncSession | None = None
+    ) -> Project:
         db_session = db_session or super().get_db().session
-        group = await db_session.execute(select(Group).where(Group.id == id))
-        return group.scalar_one_or_none()
+        project = await db_session.execute(select(Project).where(Project.id == id))
+        return project.scalar_one_or_none()
     
     
-    async def get_group_by_name(
-        self, *, name: str, db_session: AsyncSession | None = None
-    ) -> Group:
-        db_session = db_session or super().get_db().session
-        group = await db_session.execute(select(Group).where(Group.name == name))
-        return group.scalar_one_or_none()
-
-    async def add_user_to_group(self, *, user: User, group_id: UUID) -> Group:
+    async def add_user_to_project(self, *, user: User, project_id: UUID) -> Project:
         db_session = super().get_db().session
-        group = await super().get(id=group_id)
-        group.users.append(user)
-        db_session.add(group)
+        project = await super().get(id=project_id)
+        project.users.append(user)
+        db_session.add(project)
         await db_session.commit()
-        await db_session.refresh(group)
-        return group
+        await db_session.refresh(project)
+        return project
     
-    async def delete_user_from_group(self, *, user: User, group_id: UUID) -> Group:
+    async def delete_user_from_project(self, *, user: User, project_id: UUID) -> Project:
         db_session = super().get_db().session
-        group = await super().get(id=group_id)
+        project = await super().get(id=project_id)
 
-        if user not in group.users:
+        if user not in project.users:
             return None
         
-        group.users.remove(user)
-        db_session.add(group)
+        project.users.remove(user)
+        db_session.add(project)
         await db_session.commit()
-        await db_session.refresh(group)
-        return group
+        await db_session.refresh(project)
+        return project
 
-    async def add_users_to_group(
+    async def add_users_to_project(
         self,
         *,
         users: list[User],
-        group_id: UUID,
+        project_id: UUID,
         db_session: AsyncSession | None = None,
-    ) -> Group:
+    ) -> Project:
         db_session = db_session or super().get_db().session
-        group = await super().get(id=group_id, db_session=db_session)
-        group.users.extend(users)
-        db_session.add(group)
+        project = await super().get(id=project_id, db_session=db_session)
+        project.users.extend(users)
+        db_session.add(project)
         await db_session.commit()
-        await db_session.refresh(group)
-        return group
+        await db_session.refresh(project)
+        return project
 
 
-group = CRUDGroup(Group)
+project = CRUDProject(Project)
