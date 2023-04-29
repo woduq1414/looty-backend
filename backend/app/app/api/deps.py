@@ -51,6 +51,7 @@ def get_current_user(required_roles: list[str] = None) -> User:
         token: str = Depends(reusable_oauth2),
         redis_client: Redis = Depends(get_redis_client),
     ) -> User:
+        print("!!!")
         try:
             payload = jwt.decode(
                 token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]

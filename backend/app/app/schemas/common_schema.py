@@ -3,6 +3,10 @@ from enum import Enum
 from app.schemas.role_schema import IRoleRead
 
 
+class ILoginTypeEnum(str, Enum):
+    password = "password"
+    kakao = "kakao"
+
 class IGenderEnum(str, Enum):
     female = "female"
     male = "male"

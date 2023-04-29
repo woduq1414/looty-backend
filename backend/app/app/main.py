@@ -20,21 +20,21 @@ async def lifespan(app: FastAPI):
     redis_client = await get_redis_client()
     FastAPICache.init(RedisBackend(redis_client), prefix="fastapi-cache")
     # Load a pre-trained sentiment analysis model as a dictionary to an easy cleanup
-    models: dict[str, Any] = {
-        "sentiment_model": pipeline(
-            "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english",
-        ),
-        "text_generator_model": pipeline("text-generation", model="gpt2"),
-    }
-    g.set_default("sentiment_model", models["sentiment_model"])
-    g.set_default("text_generator_model", models["text_generator_model"])
+    # models: dict[str, Any] = {
+    #     "sentiment_model": pipeline(
+    #         "sentiment-analysis",
+    #         model="distilbert-base-uncased-finetuned-sst-2-english",
+    #     ),
+    #     "text_generator_model": pipeline("text-generation", model="gpt2"),
+    # }
+    # g.set_default("sentiment_model", models["sentiment_model"])
+    # g.set_default("text_generator_model", models["text_generator_model"])
     print("startup fastapi")
     yield
     # shutdown
     await FastAPICache.clear()
-    models.clear()
-    g.cleanup()
+    # models.clear()
+    # g.cleanup()
     gc.collect()
 
 

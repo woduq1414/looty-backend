@@ -1,6 +1,6 @@
 from app.models.base_uuid_model import BaseUUIDModel
 from app.models.links_model import LinkGroupUser, LinkProjectUser
-from app.models.image_media_model import ImageMedia
+# from app.models.image_media_model import ImageMedia
 from app.schemas.common_schema import IGenderEnum
 from datetime import datetime
 from sqlmodel import BigInteger, Field, SQLModel, Relationship, Column, DateTime, String
@@ -21,8 +21,19 @@ class PurchaseBase(SQLModel):
 
 class Purchase(BaseUUIDModel, PurchaseBase, table=True):
 
-    product_image_list: list["ImageMedia"] = Relationship(  # noqa: F821
-        back_populates="purchases", sa_relationship_kwargs={"lazy": "selectin"}
+
+    created_by_id: UUID | None = Field(default=None, foreign_key="User.id")
+    created_by: "User" = Relationship(  # noqa: F821
+        sa_relationship_kwargs={
+            "lazy": "joined",
+            "primaryjoin": "Purchase.created_by_id==User.id",
+        }
     )
+
+    # product_image_list: list["ImageMedia"] = Relationship(  # noqa: F821
+    #     back_populates="purchase", sa_relationship_kwargs={"lazy": "selectin"}
+    # )
+
+    product_image_list : str = Field(nullable=False)
 
     status_log : str = Field(nullable=False)

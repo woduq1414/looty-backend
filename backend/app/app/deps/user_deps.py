@@ -41,3 +41,35 @@ async def is_valid_user_id(
         raise IdNotFoundException(User, id=user_id)
 
     return user_id
+
+
+async def is_valid_email(
+    email: str
+) -> str:
+    
+    user = await crud.user.get_by_email(email=email)
+    if user:
+        is_active = user.is_active
+        if is_active is True:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Already active user",
+            )
+        else:
+
+            # if user.is_email_verified is True:
+
+            #     raise HTTPException(
+            #         status_code = status.HTTP_406_NOT_ACCEPTABLE
+            #     )
+
+            
+
+            return email
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not a member email",
+        )
+
+
