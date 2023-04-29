@@ -12,6 +12,8 @@ from sqlmodel import select
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.utils.login import verify_kakao_access_token
+
 
 class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
     async def get_by_email(
@@ -20,10 +22,16 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         db_session = db_session or super().get_db().session
         users = await db_session.execute(select(User).where(User.email == email))
         return users.scalar_one_or_none()
-    
+
+    async def get_by_kakao_id(
+        self, *, kakao_id: str, db_session: AsyncSession | None = None
+    ) -> User | None:
+        db_session = db_session or super().get_db().session
+        users = await db_session.execute(select(User).where(User.kakao_id == kakao_id))
+        return users.scalar_one_or_none()
 
     async def make_active(
-        self, *, db_obj : User, kakao_id : str,  db_session: AsyncSession | None = None
+        self, *, db_obj: User, kakao_id: str,  db_session: AsyncSession | None = None
     ) -> None:
         db_session = db_session or super().get_db().session
         db_obj.is_active = True
@@ -32,8 +40,6 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
 
         await db_session.commit()
         await db_session.refresh(db_obj)
-
-
 
     async def create_with_role(
         self, *, obj_in: IUserCreate, db_session: AsyncSession | None = None
@@ -64,6 +70,16 @@ class CRUDUser(CRUDBase[User, IUserCreate, IUserUpdate]):
         if not user:
             return None
         if not verify_password(password, user.hashed_password):
+            return None
+        return user
+
+    async def authenticate_kakao(self, *, kakao_access_token: str) -> User | None:
+        kakao_id = verify_kakao_access_token(
+            kakao_access_token=kakao_access_token)
+        if kakao_id is None:
+            return None
+        user = await self.get_by_kakao_id(kakao_id=kakao_id)
+        if not user:
             return None
         return user
 

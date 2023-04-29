@@ -13,10 +13,10 @@ from app.utils.exceptions import (
 )
 from app import crud
 from app.api import deps
-from app.deps import user_deps
+from app.deps import user_deps, role_deps
 from app.models import User, UserFollow
 from app.models.role_model import Role
-from app.utils.kakao_login import verify_kakao_access_token
+from app.utils.login import verify_kakao_access_token
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
 from app.utils.email import send_secruity_code_mail, verify_security_code
@@ -39,7 +39,7 @@ from app.schemas.response_schema import (
     IPutResponseBase,
     create_response,
 )
-from app.schemas.role_schema import IRoleEnum
+from app.schemas.role_schema import IRoleEnum, IRoleUpdate
 from app.schemas.user_follow_schema import IUserFollowRead
 from app.schemas.user_schema import (
     IUserCreate,
@@ -198,6 +198,29 @@ async def verify_email(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid secruity code")
+
+
+
+@router.put("/role/{user_id}")
+async def update_user_role(
+    role_id: UUID,
+    target_user: User = Depends(user_deps.is_valid_user),
+    current_role: Role = Depends(role_deps.get_user_role_by_id),
+    current_user: User = Depends(
+        deps.get_current_user(required_roles=[IRoleEnum.admin])
+    ),
+) -> IPutResponseBase[IRoleRead]:
+    """
+    Updates a role by its id
+
+    Required roles:
+    - admin
+    """
+    
+
+    return create_response(data=updated_role)
+
+
 
 
 @router.get("/{user_id}")
