@@ -12,10 +12,18 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
     
     async def get_project_by_id(
-        self, *, id: str, db_session: AsyncSession | None = None
+        self, *, id: UUID, db_session: AsyncSession | None = None
     ) -> Project:
         db_session = db_session or super().get_db().session
         project = await db_session.execute(select(Project).where(Project.id == id))
+        return project.scalar_one_or_none()
+
+
+    async def get_project_by_leader_user_id(
+        self, *, leader_user_id: UUID, db_session: AsyncSession | None = None
+    ) -> Project:
+        db_session = db_session or super().get_db().session
+        project = await db_session.execute(select(Project).where(Project.leader_user_id == leader_user_id))
         return project.scalar_one_or_none()
     
     
@@ -55,6 +63,7 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         await db_session.commit()
         await db_session.refresh(project)
         return project
+    
 
 
 project = CRUDProject(Project)

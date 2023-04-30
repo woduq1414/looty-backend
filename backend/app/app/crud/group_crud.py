@@ -10,7 +10,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
     
     async def get_group_by_id(
-        self, *, name: str, db_session: AsyncSession | None = None
+        self, *, id: UUID, db_session: AsyncSession | None = None
     ) -> Group:
         db_session = db_session or super().get_db().session
         group = await db_session.execute(select(Group).where(Group.id == id))
