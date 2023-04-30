@@ -4,6 +4,9 @@ from typing import Annotated
 from uuid import UUID
 
 from redis.asyncio import Redis
+from app.api.v1.endpoints.role import update_role
+from app.models.group_model import Group
+from app.models.links_model import LinkGroupUser
 from app.utils.exceptions import (
     IdNotFoundException,
     SelfFollowedException,
@@ -39,7 +42,7 @@ from app.schemas.response_schema import (
     IPutResponseBase,
     create_response,
 )
-from app.schemas.role_schema import IRoleEnum, IRoleUpdate
+from app.schemas.role_schema import IRoleEnum, IRoleRead, IRoleUpdate
 from app.schemas.user_follow_schema import IUserFollowRead
 from app.schemas.user_schema import (
     IUserCreate,
@@ -123,25 +126,83 @@ async def read_users_list_by_role_name(
     return create_response(data=users)
 
 
-@router.get("/order_by_created_at")
-async def get_hero_list_order_by_created_at(
+
+@router.get("/list/by_group_id/{group_id}")
+async def read_users_list_by_group_name(
+    group_id: UUID,
+    user_status: Annotated[
+        IUserStatus,
+        Query(
+            title="User status",
+            description="User status, It is optional. Default is active",
+        ),
+    ] = IUserStatus.active,
     params: Params = Depends(),
     current_user: User = Depends(
-        deps.get_current_user(
-            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user(required_roles=[IRoleEnum.admin])
     ),
 ) -> IGetResponsePaginated[IUserReadWithoutGroups]:
     """
-    Gets a paginated list of users ordered by created datetime
+    Retrieve users by role name and status. Requires admin role
 
     Required roles:
     - admin
-    - manager
     """
-    users = await crud.user.get_multi_paginated_ordered(
-        params=params, order_by="created_at"
+    user_status = True if user_status == IUserStatus.active else False
+    # query = (
+    #     select(User)
+    #     .join(Role, User.role_id == Group.id)
+    #     .where(
+    #         and_(
+    #             col(Role.name).ilike(f"%{role_name}%"),
+    #             User.is_active == user_status,
+    #         )
+    #     )
+    #     .order_by(User.first_name)
+    # )
+
+    target_group = await crud.group.get_group_by_id(group_id=group_id)
+    if not target_group:
+        raise IdNotFoundException(model=Group, id=group_id)
+
+    query = (
+        select(User)
+        .join(LinkGroupUser)
+        .join(Group)
+        .where(
+            and_(
+                Group.id == group_id,
+                User.is_active == user_status,
+            )
+        )
+
     )
+
+    users = await crud.user.get_multi_paginated(query=query, params=params)
     return create_response(data=users)
+
+
+
+
+# @router.get("/order_by_created_at")
+# async def get_hero_list_order_by_created_at(
+#     params: Params = Depends(),
+#     current_user: User = Depends(
+#         deps.get_current_user(
+#             required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+#     ),
+# ) -> IGetResponsePaginated[IUserReadWithoutGroups]:
+#     """
+#     Gets a paginated list of users ordered by created datetime
+
+#     Required roles:
+#     - admin
+#     - manager
+#     """
+#     users = await crud.user.get_multi_paginated_ordered(
+#         params=params, order_by="created_at"
+#     )
+#     return create_response(data=users)
 
 
 
@@ -201,11 +262,10 @@ async def verify_email(
 
 
 
-@router.put("/role/{user_id}")
+@router.put("/role/{user_id}/{role_id}")
 async def update_user_role(
     role_id: UUID,
     target_user: User = Depends(user_deps.is_valid_user),
-    current_role: Role = Depends(role_deps.get_user_role_by_id),
     current_user: User = Depends(
         deps.get_current_user(required_roles=[IRoleEnum.admin])
     ),
@@ -217,6 +277,7 @@ async def update_user_role(
     - admin
     """
     
+    updated_role = await crud.role.add_role_to_user(user = target_user, role_id = role_id)
 
     return create_response(data=updated_role)
 

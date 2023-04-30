@@ -8,6 +8,15 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
+    
+    async def get_group_by_id(
+        self, *, id: UUID, db_session: AsyncSession | None = None
+    ) -> Group:
+        db_session = db_session or super().get_db().session
+        group = await db_session.execute(select(Group).where(Group.id == id))
+        return group.scalar_one_or_none()
+    
+    
     async def get_group_by_name(
         self, *, name: str, db_session: AsyncSession | None = None
     ) -> Group:
@@ -19,6 +28,19 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
         db_session = super().get_db().session
         group = await super().get(id=group_id)
         group.users.append(user)
+        db_session.add(group)
+        await db_session.commit()
+        await db_session.refresh(group)
+        return group
+    
+    async def delete_user_from_group(self, *, user: User, group_id: UUID) -> Group:
+        db_session = super().get_db().session
+        group = await super().get(id=group_id)
+
+        if user not in group.users:
+            return None
+        
+        group.users.remove(user)
         db_session.add(group)
         await db_session.commit()
         await db_session.refresh(group)
@@ -41,3 +63,4 @@ class CRUDGroup(CRUDBase[Group, IGroupCreate, IGroupUpdate]):
 
 
 group = CRUDGroup(Group)
+

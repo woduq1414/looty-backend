@@ -112,3 +112,26 @@ async def add_user_into_a_group(
     """
     group = await crud.group.add_user_to_group(user=user, group_id=group.id)
     return create_response(message="User added to group", data=group)
+
+
+
+@router.delete("/delete_user/{user_id}/{group_id}")
+async def delete_user_into_a_group(
+    user: User = Depends(user_deps.is_valid_user),
+    group: Group = Depends(group_deps.get_group_by_id),
+    current_user: User = Depends(
+        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+    ),
+) -> IPostResponseBase[IGroupRead]:
+    """
+    Removves a user into a group
+
+    Required roles:
+    - admin
+    - manager
+    """
+    deleted_group = await crud.group.delete_user_from_group(user=user, group_id=group.id)
+    if group is None:
+        raise IdNotFoundException(Group, group.id)
+
+    return create_response(message="User deleted to group", data=group)
