@@ -27,6 +27,7 @@ users: list[dict[str, str | IUserCreate]] = [
             email=settings.FIRST_SUPERUSER_EMAIL,
             is_superuser=True,
             login_type=ILoginTypeEnum.password,
+            is_email_verified=True
         ),
         "role": "admin",
     },
@@ -38,6 +39,7 @@ users: list[dict[str, str | IUserCreate]] = [
             email="manager@example.com",
             is_superuser=False,
             login_type=ILoginTypeEnum.password,
+            is_email_verified=True
         ),
         "role": "manager",
     },
@@ -49,6 +51,7 @@ users: list[dict[str, str | IUserCreate]] = [
             email="user@example.com",
             is_superuser=False,
             login_type=ILoginTypeEnum.password,
+            is_email_verified=True
         ),
         "role": "user",
     },
