@@ -34,13 +34,13 @@ class UserBase(SQLModel):
 
     login_type: str | None = Field(default=None, nullable=True)
     kakao_id: str | None = Field(default=None, nullable=True)
-
+    is_email_verified: bool | None = Field(nullable=True)
 
 
 
 class User(BaseUUIDModel, UserBase, table=True):
 
-    is_email_verified: bool = Field(nullable=True)
+    
 
     hashed_password: str | None = Field(nullable=False, index=True)
     role: Optional["Role"] = Relationship(  # noqa: F821
