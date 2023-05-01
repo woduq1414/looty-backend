@@ -7,8 +7,12 @@ from .user_schema import IUserReadWithoutGroups
 
 class IPurchaseCreate(PurchaseBase):
     
+
+
     def __init__(self, **data):
         super().__init__(**data)
+        self.status_log = '{"abc" : "def"}'
+        self.product_image_list = '{"abc" : "def"}'
         
     
 

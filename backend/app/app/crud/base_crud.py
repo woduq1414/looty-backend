@@ -166,7 +166,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         try:
             db_session.add(db_obj)
             await db_session.commit()
-        except exc.IntegrityError:
+        except exc.IntegrityError as e:
+            print(e)
             db_session.rollback()
             raise HTTPException(
                 status_code=409,

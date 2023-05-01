@@ -88,7 +88,7 @@ async def get_purchase_by_id(
 async def create_purchase(
     purchase: IPurchaseCreate,
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPostResponseBase[IPurchaseRead]:
     """
@@ -111,7 +111,7 @@ async def update_purchase(
     purchase: IPurchaseUpdate,
     current_purchase: Purchase = Depends(purchase_deps.get_purchase_by_id),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPutResponseBase[IPurchaseRead]:
     """

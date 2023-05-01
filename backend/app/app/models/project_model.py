@@ -42,3 +42,7 @@ class Project(BaseUUIDModel, ProjectBase, table=True):
         link_model=LinkProjectUser,
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+
+    purchases: list["Purchase"] = Relationship(  # noqa: F821
+        back_populates="project", sa_relationship_kwargs={"lazy": "selectin"}
+    )
