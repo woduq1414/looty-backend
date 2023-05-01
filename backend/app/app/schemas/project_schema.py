@@ -32,21 +32,3 @@ class IProjectUpdate(ProjectBase):
         super().__init__(**data)
     
 
-
-# class IGroupCreate(GroupBase):
-#     pass
-
-
-# class IGroupRead(GroupBase):
-#     id: UUID
-
-
-# class IGroupReadWithUsers(GroupBase):
-#     id: UUID
-#     users: list[IUserReadWithoutGroups] | None = []
-
-
-# # All these fields are optional
-# @optional
-# class IGroupUpdate(GroupBase):
-#     pass

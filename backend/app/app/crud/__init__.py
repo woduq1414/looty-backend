@@ -6,3 +6,4 @@ from .group_crud import group
 from .image_media_crud import image
 from .user_follow_crud import user_follow
 from .project_crud import project
+from .purchase_crud import purchase
