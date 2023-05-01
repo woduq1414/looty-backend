@@ -158,7 +158,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_obj = self.model.from_orm(obj_in)  # type: ignore
 
         if created_by_id:
-            db_obj.created_by_id = created_by_id
+            if hasattr(db_obj, "created_by_id"):
+                db_obj.created_by_id = created_by_id
+            elif hasattr(db_obj, "leader_user_id"):
+                db_obj.leader_user_id = created_by_id
 
         try:
             db_session.add(db_obj)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from app.models.project_model import ProjectBase
 from app.utils.partial import optional
 from uuid import UUID
@@ -5,8 +6,16 @@ from .user_schema import IUserReadWithoutGroups
 
 
 class IProjectCreate(ProjectBase):
-    pass
+    
+    project_users: list[UUID] | None = []
 
+    def __init__(self, **data):
+        super().__init__(**data)
+        start_date = self.start_date.replace(tzinfo=None)
+        self.start_date = datetime(start_date.year, start_date.month, start_date.day)
+        end_date = self.end_date.replace(tzinfo=None)
+        self.end_date = datetime(end_date.year, end_date.month, end_date.day)
+    
 
 class IProjectRead(ProjectBase):
     id: UUID
@@ -18,7 +27,10 @@ class IProjectReadWithUsers(ProjectBase):
 
 @optional
 class IProjectUpdate(ProjectBase):
-    pass
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+    
 
 
 # class IGroupCreate(GroupBase):

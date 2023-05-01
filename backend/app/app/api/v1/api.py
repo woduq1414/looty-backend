@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     natural_language,
+    project,
     user,
     hero,
     team,
@@ -18,6 +19,7 @@ api_router.include_router(login.router, prefix="/login", tags=["login"])
 api_router.include_router(role.router, prefix="/role", tags=["role"])
 api_router.include_router(user.router, prefix="/user", tags=["user"])
 api_router.include_router(group.router, prefix="/group", tags=["group"])
+api_router.include_router(project.router, prefix="/project", tags=["project"])
 
 
 # api_router.include_router(team.router, prefix="/team", tags=["team"])

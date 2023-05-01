@@ -70,7 +70,22 @@ async def create_project(
     - manager
     """
 
+    if len(project.project_users) == 0:
+        project.project_users.append(current_user.id)    
+
+
+    project_users_row_list = []
+    for user_id in project.project_users:
+        user = await crud.user.get(id=user_id)
+        if user:
+            project_users_row_list.append(user)
+
     new_project = await crud.project.create(obj_in=project, created_by_id=current_user.id)
+    await crud.project.add_users_to_project(users=project_users_row_list, project_id=new_project.id)
+    
+    print(project.project_users)
+
+
     return create_response(data=new_project)
 
 
