@@ -89,6 +89,8 @@ async def create_project(
     return create_response(data=new_project)
 
 
+
+
 @router.put("/{project_id}")
 async def update_project(
     project: IProjectUpdate,
@@ -106,6 +108,10 @@ async def update_project(
     """
     project_updated = await crud.project.update(obj_current=current_project, obj_new=project)
     return create_response(data=project_updated)
+
+
+
+
 
 
 @router.post("/add_user/{user_id}/{project_id}")
