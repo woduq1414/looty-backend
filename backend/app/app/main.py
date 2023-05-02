@@ -1,6 +1,6 @@
 import gc
 from typing import Any
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from app.api.deps import get_redis_client
 from fastapi_pagination import add_pagination
 from starlette.middleware.cors import CORSMiddleware
@@ -12,6 +12,10 @@ from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 from contextlib import asynccontextmanager
 from app.utils.fastapi_globals import g, GlobalsMiddleware
 from transformers import pipeline
+
+from fastapi.staticfiles import StaticFiles
+
+from fastapi.templating import Jinja2Templates
 
 
 @asynccontextmanager
@@ -45,7 +49,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
 )
-
+templates = Jinja2Templates(directory="templates")
 
 app.add_middleware(
     SQLAlchemyMiddleware,
@@ -88,6 +92,14 @@ async def root():
     """
     # if oso.is_allowed(user, "read", message):
     return {"message": "Hello World"}
+
+@app.get("/jodit-test")
+async def jodit_test(request:Request):
+    return templates.TemplateResponse("jodit.html", {"request": request})
+    # render html template
+
+
+
 
 
 # Add Routers
