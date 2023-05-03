@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     natural_language,
+    project,
     user,
     hero,
     team,
@@ -10,15 +11,20 @@ from app.api.v1.endpoints import (
     cache,
     weather,
     report,
-    periodic_tasks
+    periodic_tasks,
+    purchase,
+    image
 )
 
 api_router = APIRouter()
+
 api_router.include_router(login.router, prefix="/login", tags=["login"])
 api_router.include_router(role.router, prefix="/role", tags=["role"])
 api_router.include_router(user.router, prefix="/user", tags=["user"])
 api_router.include_router(group.router, prefix="/group", tags=["group"])
-
+api_router.include_router(project.router, prefix="/project", tags=["project"])
+api_router.include_router(purchase.router, prefix="/purchase", tags=["purchase"])
+api_router.include_router(image.router, prefix="/image", tags=["image"])
 
 # api_router.include_router(team.router, prefix="/team", tags=["team"])
 # api_router.include_router(hero.router, prefix="/hero", tags=["hero"])

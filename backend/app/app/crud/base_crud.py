@@ -158,12 +158,16 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         db_obj = self.model.from_orm(obj_in)  # type: ignore
 
         if created_by_id:
-            db_obj.created_by_id = created_by_id
+            if hasattr(db_obj, "created_by_id"):
+                db_obj.created_by_id = created_by_id
+            elif hasattr(db_obj, "leader_user_id"):
+                db_obj.leader_user_id = created_by_id
 
         try:
             db_session.add(db_obj)
             await db_session.commit()
-        except exc.IntegrityError:
+        except exc.IntegrityError as e:
+            print(e)
             db_session.rollback()
             raise HTTPException(
                 status_code=409,
@@ -188,6 +192,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             update_data = obj_new.dict(
                 exclude_unset=True
             )  # This tells Pydantic to not include the values that were not sent
+
         for field in obj_data:
             if field in update_data:
                 setattr(obj_current, field, update_data[field])

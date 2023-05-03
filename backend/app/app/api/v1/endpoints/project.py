@@ -1,3 +1,4 @@
+import json
 from uuid import UUID
 from fastapi import APIRouter, Depends
 from fastapi_pagination import Params
@@ -59,7 +60,7 @@ async def get_project_by_id(
 async def create_project(
     project: IProjectCreate,
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPostResponseBase[IProjectRead]:
     """
@@ -70,8 +71,25 @@ async def create_project(
     - manager
     """
 
+    if len(project.project_users) == 0:
+        project.project_users.append(current_user.id)    
+
+
+    project_users_row_list = []
+    for user_id in project.project_users:
+        user = await crud.user.get(id=user_id)
+        if user:
+            project_users_row_list.append(user)
+
     new_project = await crud.project.create(obj_in=project, created_by_id=current_user.id)
+    await crud.project.add_users_to_project(users=project_users_row_list, project_id=new_project.id)
+    
+    print(project.project_users)
+
+
     return create_response(data=new_project)
+
+
 
 
 @router.put("/{project_id}")
@@ -79,7 +97,7 @@ async def update_project(
     project: IProjectUpdate,
     current_project: Project = Depends(project_deps.get_project_by_id),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPutResponseBase[IProjectRead]:
     """
@@ -89,8 +107,16 @@ async def update_project(
     - admin
     - manager
     """
+    print(project, "!!")
+    if hasattr(project, "pre_content_json"):
+        project.pre_content = json.dumps(project.pre_content_json)
+
     project_updated = await crud.project.update(obj_current=current_project, obj_new=project)
     return create_response(data=project_updated)
+
+
+
+
 
 
 @router.post("/add_user/{user_id}/{project_id}")
@@ -98,7 +124,7 @@ async def add_user_into_a_project(
     user: User = Depends(user_deps.is_valid_user),
     project: Project = Depends(project_deps.get_project_by_id),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPostResponseBase[IProjectRead]:
     """
@@ -118,7 +144,7 @@ async def delete_user_into_a_project(
     user: User = Depends(user_deps.is_valid_user),
     project: Project = Depends(project_deps.get_project_by_id),
     current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+        deps.get_current_user()
     ),
 ) -> IPostResponseBase[IProjectRead]:
     """

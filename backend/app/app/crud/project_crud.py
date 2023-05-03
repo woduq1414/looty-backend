@@ -19,6 +19,9 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         return project.scalar_one_or_none()
 
 
+    
+
+
     async def get_project_by_leader_user_id(
         self, *, leader_user_id: UUID, db_session: AsyncSession | None = None
     ) -> Project:
@@ -63,6 +66,8 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         await db_session.commit()
         await db_session.refresh(project)
         return project
+    
+
     
 
 

@@ -19,16 +19,16 @@ class ProjectBase(SQLModel):
 
 
     start_date : datetime | None = Field(nullable = True)
-    end_date : datetime | None = Field(nullable = True)
+    end_date : datetime | None = Field(nullable = True, )
  
+    
+    pre_content : str | None = Field(nullable=True)
+
+    final_content : str | None = Field(nullable=True)
 
 
 
 class Project(BaseUUIDModel, ProjectBase, table=True):
-    
-    pre_content : str = Field(nullable=True)
-
-    final_content : str = Field(nullable=True)
 
     leader_user_id: UUID | None = Field(default=None, foreign_key="User.id")
     leader_user: "User" = Relationship(
@@ -41,4 +41,8 @@ class Project(BaseUUIDModel, ProjectBase, table=True):
         back_populates="projects",
         link_model=LinkProjectUser,
         sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+    purchases: list["Purchase"] = Relationship(  # noqa: F821
+        back_populates="project", sa_relationship_kwargs={"lazy": "selectin"}
     )
