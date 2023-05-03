@@ -21,8 +21,8 @@ groups: list[IGroupCreate] = [
 users: list[dict[str, str | IUserCreate]] = [
     {
         "data": IUserCreate(
-            first_name="Admin",
-            last_name="FastAPI",
+            name="Admin",
+
             password=settings.FIRST_SUPERUSER_PASSWORD,
             email=settings.FIRST_SUPERUSER_EMAIL,
             is_superuser=True,
@@ -32,8 +32,8 @@ users: list[dict[str, str | IUserCreate]] = [
     },
     {
         "data": IUserCreate(
-            first_name="Manager",
-            last_name="FastAPI",
+            name="Manager",
+
             password=settings.FIRST_SUPERUSER_PASSWORD,
             email="manager@example.com",
             is_superuser=False,
@@ -43,8 +43,8 @@ users: list[dict[str, str | IUserCreate]] = [
     },
     {
         "data": IUserCreate(
-            first_name="User",
-            last_name="FastAPI",
+            name="User",
+
             password=settings.FIRST_SUPERUSER_PASSWORD,
             email="user@example.com",
             is_superuser=False,

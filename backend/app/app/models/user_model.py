@@ -12,8 +12,7 @@ from uuid import UUID
 
 
 class UserBase(SQLModel):
-    first_name: str
-    last_name: str
+    name: str
     email: EmailStr = Field(
         nullable=True, index=True, sa_column_kwargs={"unique": True}
     )

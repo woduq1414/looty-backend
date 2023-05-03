@@ -7,7 +7,7 @@ from app.crud.base_crud import CRUDBase
 from sqlmodel import select
 from uuid import UUID
 from sqlmodel.ext.asyncio.session import AsyncSession
-
+from jinja2 import Environment, FileSystemLoader, select_autoescape, PackageLoader
 
 class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
     
@@ -67,8 +67,28 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         await db_session.refresh(project)
         return project
     
+    async def pre_content_to_html(
+        self,
+        *,
+        project: Project,
+       
+    ) -> str:
+        db_session = super().get_db().session
 
-    
+        if project.pre_content is None:
+            return None
+        
+        env = Environment(
+            loader=FileSystemLoader('templates'),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        template = env.get_template(f'pre_content_format.html')
+
+        render_data = {
+            "leader_name": project.leader_user.name,
+        }
+
+        return template.render(render_data = render_data)
 
 
 project = CRUDProject(Project)
