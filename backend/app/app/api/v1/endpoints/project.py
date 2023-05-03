@@ -1,3 +1,4 @@
+import json
 from uuid import UUID
 from fastapi import APIRouter, Depends
 from fastapi_pagination import Params
@@ -106,6 +107,10 @@ async def update_project(
     - admin
     - manager
     """
+    print(project, "!!")
+    if hasattr(project, "pre_content_json"):
+        project.pre_content = json.dumps(project.pre_content_json)
+
     project_updated = await crud.project.update(obj_current=current_project, obj_new=project)
     return create_response(data=project_updated)
 

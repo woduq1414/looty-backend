@@ -68,5 +68,7 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         return project
     
 
+    
+
 
 project = CRUDProject(Project)
