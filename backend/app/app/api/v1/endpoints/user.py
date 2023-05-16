@@ -64,9 +64,9 @@ async def read_users_list(
     params: Params = Depends(),
     current_user: User = Depends(
         deps.get_current_user(
-            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
+       )
     ),
-) -> IGetResponsePaginated[IUserReadWithoutGroups]:
+) -> IGetResponsePaginated[IUserRead]:
     """
     Retrieve users. Requires admin or manager role
 
