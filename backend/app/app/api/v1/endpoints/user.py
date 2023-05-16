@@ -47,6 +47,7 @@ from app.schemas.user_follow_schema import IUserFollowRead
 from app.schemas.user_schema import (
     IUserCreate,
     IUserRead,
+    IUserReadTrivial,
     IUserReadWithoutGroups,
     IUserStatus,
 )
@@ -64,7 +65,7 @@ async def read_users_list(
     params: Params = Depends(),
     current_user: User = Depends(
         deps.get_current_user(
-       )
+            required_roles=[IRoleEnum.admin, IRoleEnum.manager])
     ),
 ) -> IGetResponsePaginated[IUserRead]:
     """
@@ -76,6 +77,21 @@ async def read_users_list(
     """
     users = await crud.user.get_multi_paginated(params=params)
     return create_response(data=users)
+
+
+@router.get("/list/trivial")
+async def read_users_list_trivial(
+    params: Params = Depends(),
+    current_user: User = Depends(
+        deps.get_current_user()
+    ),
+) -> IGetResponsePaginated[IUserReadTrivial]:
+    """
+    Retrieve trivial info of users
+    """
+    users = await crud.user.get_multi_paginated(params=params)
+    return create_response(data=users)
+
 
 
 

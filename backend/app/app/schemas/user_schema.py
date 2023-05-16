@@ -7,7 +7,7 @@ from uuid import UUID
 from enum import Enum
 from .image_media_schema import IImageMediaRead
 from .role_schema import IRoleRead
-
+from sqlmodel import SQLModel
 
 class IUserCreate(UserBase):
     
@@ -42,6 +42,12 @@ class IUserRead(UserBase):
     image: IImageMediaRead | None
     follower_count: int | None = 0
     following_count: int | None = 0
+
+
+class IUserReadTrivial(SQLModel):
+    id: UUID
+    name : str
+    groups: list[IGroupReadBasic] | None = []
 
 
 class IUserReadWithoutGroups(UserBase):
