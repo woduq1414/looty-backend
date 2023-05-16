@@ -145,3 +145,6 @@ sonarqube/logs
 
 .github
 .vscode
+
+test.html
+test.pdf

@@ -22,7 +22,7 @@ from app.models.role_model import Role
 from app.utils.login import verify_kakao_access_token
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
-from app.utils.email import send_secruity_code_mail, verify_security_code
+from app.utils.email import send_security_code_mail, verify_security_code
 from fastapi import (
     APIRouter,
     Body,
@@ -78,52 +78,7 @@ async def read_users_list(
     return create_response(data=users)
 
 
-@router.get("/list/by_role_name")
-async def read_users_list_by_role_name(
-    name: str = "",
-    user_status: Annotated[
-        IUserStatus,
-        Query(
-            title="User status",
-            description="User status, It is optional. Default is active",
-        ),
-    ] = IUserStatus.active,
-    role_name: str = "",
-    params: Params = Depends(),
-    current_user: User = Depends(
-        deps.get_current_user(required_roles=[IRoleEnum.admin])
-    ),
-) -> IGetResponsePaginated[IUserReadWithoutGroups]:
-    """
-    Retrieve users by role name and status. Requires admin role
 
-    Required roles:
-    - admin
-    """
-    user_status = True if user_status == IUserStatus.active else False
-    query = (
-        select(User)
-        .join(Role, User.role_id == Role.id)
-        .where(
-            and_(
-                col(Role.name).ilike(f"%{role_name}%"),
-                User.is_active == user_status,
-                or_(
-                    col(User.first_name).ilike(f"%{name}%"),
-                    col(User.last_name).ilike(f"%{name}%"),
-                    text(
-                        f"""'{name}' % concat("User".last_name, ' ', "User".first_name)"""
-                    ),
-                    text(
-                        f"""'{name}' % concat("User".first_name, ' ', "User".last_name)"""
-                    ),
-                ),
-            )
-        )
-        .order_by(User.first_name)
-    )
-    users = await crud.user.get_multi_paginated(query=query, params=params)
-    return create_response(data=users)
 
 
 
@@ -217,14 +172,14 @@ async def get_is_valid_email(
 ) -> IGetResponseBase[dict]:
     """
     Check if email is registered but not active.
-    If email is registerd but not active, send secruity code to email.
+    If email is registerd but not active, send security code to email.
     """
 
-    secruity_code = await send_secruity_code_mail(email=email, redis_client=redis_client)
+    security_code = await send_security_code_mail(email=email, redis_client=redis_client)
 
     return create_response(data={
         "email": email,
-        "secruity_code": secruity_code  # 메일 전송 구현 전까지 임시로
+        "security_code": security_code  # 메일 전송 구현 전까지 임시로
 
     })
 
@@ -232,16 +187,16 @@ async def get_is_valid_email(
 @router.post("/verify-email")
 async def verify_email(
     email: str = Body(...),
-    secruity_code: str = Body(...),
+    security_code: str = Body(...),
     kakao_access_token: str = Body(...),
     redis_client: Redis = Depends(deps.get_redis_client),
-    # secruity_code : str = Depends(),
+    # security_code : str = Depends(),
 ) -> IGetResponseBase[str]:
     """
-    Verify email by secruity code.
+    Verify email by security code.
     """
 
-    if await verify_security_code(email=email, secruity_code=secruity_code, redis_client=redis_client):
+    if await verify_security_code(email=email, security_code=security_code, redis_client=redis_client):
 
         current_user = await crud.user.get_by_email(
             email=email
@@ -258,7 +213,7 @@ async def verify_email(
         return create_response(data="success")
     else:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid secruity code")
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid security code")
 
 
 

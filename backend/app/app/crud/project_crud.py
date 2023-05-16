@@ -1,4 +1,7 @@
 
+import json
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from app.models.project_model import Project
 
 from app.models.user_model import User
@@ -67,8 +70,36 @@ class CRUDProject(CRUDBase[Project, IProjectCreate, IProjectUpdate]):
         await db_session.refresh(project)
         return project
     
+    async def pre_content_to_html(self, *, project: Project):
+        if project.pre_content is None:
+            return None
+        
+        env = Environment(
+            loader=FileSystemLoader('templates'),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        template = env.get_template(f'pre_content_format.html')
+        
 
-    
+        pre_content = json.loads(project.pre_content)
+        render_data = {
+            "leader_data": {
+                "name": project.leader_user.name,
+                "group_list" : ", ".join([x.name for x in project.leader_user.groups]),
+            },
+            "date_string" : project.created_at.strftime("%Y.%m.%d"),
+            "project_user_list" : [{
+                "name": user.name,
+                "group_list" : ", ".join([x.name for x in user.groups]),
+            } for user in project.users],
+            "project_title" : project.title,
+            "motive" : pre_content["motive"],
+            "description" : pre_content["description"],
+        }
+        print(render_data)
+
+        return template.render(render_data = render_data)
+        
 
 
 project = CRUDProject(Project)

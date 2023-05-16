@@ -90,6 +90,33 @@ async def create_project(
     return create_response(data=new_project)
 
 
+@router.post("/pdf/pre_content/{project_id}")
+async def pre_content_to_pdf(
+    project: Project = Depends(project_deps.get_project_by_id),
+    current_user: User = Depends(
+        deps.get_current_user()
+    ),
+) -> IPostResponseBase[str]:
+    """
+    Adds a user into a project
+
+    Required roles:
+    - admin
+    - manager
+    """
+    html = await crud.project.pre_content_to_html(project = project)
+
+    if html is None:
+        raise ValueError("No pre content found")
+    
+    f = open("/code/test.html", "w")
+    f.write(html)
+    f.close()
+    
+
+
+    
+    return create_response(data=html)
 
 
 @router.put("/{project_id}")

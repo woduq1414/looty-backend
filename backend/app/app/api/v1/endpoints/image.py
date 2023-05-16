@@ -30,7 +30,7 @@ from app.models.role_model import Role
 from app.utils.login import verify_kakao_access_token
 from app.utils.minio_client import MinioClient
 from app.utils.resize_image import modify_image
-from app.utils.email import send_secruity_code_mail, verify_security_code
+from app.utils.email import send_security_code_mail, verify_security_code
 from fastapi import (
     APIRouter,
     Body,
